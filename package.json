@@ -1,0 +1,7 @@
+{
+  "name": "my-trends-proxy",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node api/trends.js"
+  }
+}
