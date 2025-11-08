@@ -1,8 +1,6 @@
 {
-  "name": "trends-proxy",
+  "name": "reddit-proxy",
   "version": "1.0.0",
-  "type": "module",
-  "dependencies": {
-    "node-fetch": "^3.3.2"
-  }
+  "private": true,
+  "type": "module"
 }
