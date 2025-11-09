@@ -4,20 +4,25 @@ export default async function handler(req, res) {
       process.env.REDDIT_CLIENT_ID + ":" + process.env.REDDIT_CLIENT_SECRET
     ).toString("base64");
 
-    // 正確的 OAuth 端點
+    // 改為使用帳密模式登入
     const tokenRes = await fetch("https://www.reddit.com/api/v1/access_token", {
       method: "POST",
       headers: {
         "Authorization": `Basic ${auth}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: "grant_type=client_credentials",
+      body: `grant_type=password&username=${process.env.REDDIT_USERNAME}&password=${process.env.REDDIT_PASSWORD}`,
     });
 
     const tokenData = await tokenRes.json();
     const accessToken = tokenData.access_token;
 
-    // ✅ 改這裡：使用 Reddit OAuth API endpoint，而非 public Reddit JSON
+    if (!accessToken) {
+      console.error("❌ OAuth failed:", tokenData);
+      return res.status(500).json({ error: "OAuth failed" });
+    }
+
+    // 成功登入後呼叫 subreddit
     const redditRes = await fetch(
       "https://oauth.reddit.com/r/wallstreetbets/hot?limit=100",
       {
@@ -29,9 +34,8 @@ export default async function handler(req, res) {
     );
 
     const text = await redditRes.text();
-
     if (!redditRes.ok || text.startsWith("<")) {
-      console.error("⚠️ Reddit OAuth blocked request:", redditRes.status, text.slice(0, 200));
+      console.error("⚠️ Reddit OAuth blocked:", redditRes.status, text.slice(0, 200));
       return res.status(500).json({ error: "Reddit OAuth blocked request" });
     }
 
