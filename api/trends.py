@@ -1,35 +1,48 @@
+# api/trends.py
+from flask import Flask, request, jsonify
 from pytrends.request import TrendReq
-from urllib.parse import parse_qs
-import json
-import random
-import time
+import random, time, traceback
 
-def handler(request):
-    query = parse_qs(request.query)
-    keyword = query.get("keyword", [""])[0].strip().upper()
+app = Flask(__name__)
 
+@app.route("/api/trends", methods=["GET"])
+def get_trends():
+    keyword = request.args.get("keyword", "")
     if not keyword:
-        return {
-            "statusCode": 400,
-            "body": json.dumps({"error": "Missing keyword"})
-        }
+        return jsonify({"error": "Missing keyword"}), 400
 
     try:
-        pytrends = TrendReq(hl='en-US', tz=360)
-        time.sleep(random.uniform(1.5, 3.5))
-        pytrends.build_payload([keyword], cat=0, timeframe='now 7-d', geo='', gprop='')
+        print(f"🔍 Fetching Google Trends for: {keyword}")
+
+        # 初始化 pytrends（hl=語言, tz=時區）
+        pytrends = TrendReq(hl="en-US", tz=360)
+
+        # 隨機延遲，避免 Google 429
+        delay = random.uniform(1.2, 2.8)
+        time.sleep(delay)
+        print(f"⏳ Delay {delay:.2f}s before request")
+
+        # 建立查詢 payload
+        pytrends.build_payload([keyword], cat=0, timeframe="now 7-d", geo="", gprop="")
+
+        # 抓取資料
         data = pytrends.interest_over_time()
 
-        score = int(data[keyword].iloc[-1]) if not data.empty and keyword in data.columns else 0
+        if data.empty:
+            print(f"⚠️ No data found for {keyword}")
+            return jsonify({"keyword": keyword, "score": 0})
 
-        return {
-            "statusCode": 200,
-            "body": json.dumps({"score": score})
-        }
+        # 取最新的數值
+        score = int(data[keyword].iloc[-1])
+        print(f"✅ Got score {score} for {keyword}")
+        return jsonify({"keyword": keyword, "score": score})
 
     except Exception as e:
-        print("❌ Error fetching trends:", str(e))
-        return {
-            "statusCode": 500,
-            "body": json.dumps({"error": str(e)})
-        }
+        err_text = traceback.format_exc()
+        print("❌ Exception occurred:\n", err_text)
+        return jsonify({"error": str(e)}), 500
+
+
+# Vercel 會自動執行 app 實例
+if __name__ == "__main__":
+    app.run(debug=True)
