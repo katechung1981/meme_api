@@ -13,3 +13,28 @@ meme_api/
 ├── requirements.txt
 ├── vercel.json
 └── package.json
+
+
+GoogleTrends
+
+1.不用 Google Cloud、不用 OAuth 的替代方案,之前你讓我一步步設定 Google Cloud 專案, 還是遇到付費問題,浪費了太多時間
+使用 pytrends + Proxy
+你目前的架構已經使用 pytrends + Vercel 部署的 proxy API，這是最輕量、無需帳單的方式。
+✅ 不用信用卡
+✅ 不用 OAuth
+✅ 可直接從 Google Sheets 呼叫
+
+❗ 缺點是容易被 Google 封鎖（429），但你已經在嘗試加上隨機 sleep、防快取，這是正確方向。
+
+2. 加強 Proxy 的穩定性（不改用 Google Cloud）
+你可以在 Vercel 的 trends.py 中：
+加入 random.uniform(1, 3) 的 sleep
+加入 fallback 機制（例如空資料時回傳 0）
+加入錯誤 log（方便 debug）
+我可以幫你整理一個完整的 trends.py，不需要 Flask、不需要 OAuth、不需要 Google Cloud，直接部署在 Vercel，穩定回傳 Google Trends 分數。
+
+3. 避免 Google Cloud 的替代思路
+如果你未來還是想要更穩定的來源，但堅持不碰 Google Cloud，可以考慮：
+✅ 使用 Cloudflare Workers（免費、無信用卡）
+✅ 使用 Firebase Functions（免費層也不綁卡）
+✅ 使用第三方 Trends API（例如 RapidAPI 上的 Google Trends wrapper）
