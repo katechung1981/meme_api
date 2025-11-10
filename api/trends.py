@@ -1,27 +1,21 @@
-from flask import Flask, request, jsonify
 from pytrends.request import TrendReq
-import time
+import random, time
 
-app = Flask(__name__)
-pytrends = TrendReq(hl='en-US', tz=360)
-
-@app.route('/api/trends')
-def get_trends():
-    keyword = request.args.get('keyword')
+def handler(request):
+    from flask import jsonify, request as req
+    keyword = req.args.get("keyword", "")
     if not keyword:
-        return jsonify({"error": "missing keyword"}), 400
+        return jsonify({"error": "Missing keyword"}), 400
 
     try:
-        # 建立 payload
-        pytrends.build_payload([keyword], timeframe='now 7-d', geo='US')
-        interest = pytrends.interest_over_time()
-        if interest.empty:
-            score = 0
-        else:
-            # 取 7 天平均
-            score = round(interest[keyword].mean())
-        # 避免被封鎖，休息 2 秒
-        time.sleep(2)
-        return jsonify({"keyword": keyword, "score": score})
+        pytrends = TrendReq(hl='en-US', tz=360)
+        time.sleep(random.uniform(1, 3))  # 隨機等待防止 429
+        pytrends.build_payload([keyword], cat=0, timeframe="now 7-d", geo="", gprop="")
+        data = pytrends.interest_over_time()
+        if data.empty:
+            return jsonify({"score": 0})
+        score = int(data[keyword].iloc[-1])
+        return jsonify({"score": score})
     except Exception as e:
+        print("❌ Error fetching trends:", str(e))
         return jsonify({"error": str(e)}), 500
