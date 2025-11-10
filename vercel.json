@@ -1,9 +1,7 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "api/trends.py", "use": "@vercel/python" }
-  ],
-  "routes": [
-    { "src": "/api/trends", "dest": "api/trends.py" }
-  ]
+  "functions": {
+    "api/*.py": {
+      "runtime": "python3.9"
+    }
+  }
 }
